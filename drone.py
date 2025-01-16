@@ -4,17 +4,17 @@ import cv2
 import numpy as np
 import datetime
 
-# Palette de couleurs prédéfinies (HSV)
-COLOR_PALETTE = {
-    "blue": ((100, 150, 50), (140, 255, 255)),  # Bleu
-    "red": ((0, 100, 100), (10, 255, 255)),    # Rouge
-    "green": ((40, 100, 50), (80, 255, 255)),  # Vert
-    "yellow": ((20, 100, 100), (40, 255, 255)),# Jaune
-    "orange": ((10, 100, 100), (20, 255, 255)),# Orange
-    "purple": ((130, 100, 50), (160, 255, 255))# Violet
-}
-
 class Tello:
+    # Palette de couleurs prédéfinies (HSV)
+    COLOR_PALETTE = {
+        "blue": ((100, 150, 50), (140, 255, 255)),  # Bleu
+        "red": ((0, 100, 100), (10, 255, 255)),    # Rouge
+        "green": ((40, 100, 50), (80, 255, 255)),  # Vert
+        "yellow": ((20, 100, 100), (40, 255, 255)),# Jaune
+        "orange": ((10, 100, 100), (20, 255, 255)),# Orange
+        "purple": ((130, 100, 50), (160, 255, 255))# Violet
+    }
+
     def __init__(self):
         self.cap = cv2.VideoCapture(0)
         if not self.cap.isOpened():
@@ -22,7 +22,7 @@ class Tello:
             exit()
         self.tracking_enabled = False
         self.current_color = "blue"
-        self.color_lower, self.color_upper = COLOR_PALETTE[self.current_color]
+        self.color_lower, self.color_upper = self.COLOR_PALETTE[self.current_color]
         self.velocities = {'for_back': 0, 'left_right': 0, 'up_down': 0, 'yaw': 0}
         self.current_mode = "Manual"
         self.video_writer = None
@@ -72,8 +72,8 @@ class Tello:
                 hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
                 if self.current_color == "red":
-                    lower1 = np.array(COLOR_PALETTE["red"][0])
-                    upper1 = np.array(COLOR_PALETTE["red"][1])
+                    lower1 = np.array(self.COLOR_PALETTE["red"][0])
+                    upper1 = np.array(self.COLOR_PALETTE["red"][1])
                     lower2 = np.array((170, 100, 100))
                     upper2 = np.array((180, 255, 255))
 
@@ -81,8 +81,8 @@ class Tello:
                     mask2 = cv2.inRange(hsv, lower2, upper2)
                     mask = cv2.bitwise_or(mask1, mask2)
                 else:
-                    lower = np.array(COLOR_PALETTE[self.current_color][0])
-                    upper = np.array(COLOR_PALETTE[self.current_color][1])
+                    lower = np.array(self.COLOR_PALETTE[self.current_color][0])
+                    upper = np.array(self.COLOR_PALETTE[self.current_color][1])
                     mask = cv2.inRange(hsv, lower, upper)
 
                 contours, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
