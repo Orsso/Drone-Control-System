@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drone Controller</title>
+    <style>
+        /* Style militaire */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            color: #00ff00;
+            font-family: "Arial", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #video-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 80%;
+            max-width: 1200px;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        #video-feed {
+            width: 100%;
+            height: auto;
+            max-height: 70vh;
+        }
+
+        #controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            width: 80%;
+            max-width: 1200px;
+        }
+
+        .button {
+            background: transparent;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            transition: all 0.3s ease-in-out;
+        }
+
+        .button:hover {
+            background-color: #00ff00;
+            color: #1a1a1a;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
+        }
+
+        .status-indicator {
+            margin-top: 10px;
+            font-size: 14px;
+            text-align: center;
+            color: #00ff00;
+        }
+
+        .status-indicator span {
+            font-weight: bold;
+        }
+
+        #velocity-indicators {
+            margin-top: 20px;
+            font-size: 14px;
+            text-align: center;
+            color: #00ff00;
+        }
+
+        #velocity-indicators ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #velocity-indicators ul li {
+            margin-bottom: 5px;
+        }
+
+        #color-palette {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .color-box {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            transition: all 0.3s ease-in-out;
+        }
+
+        .color-box:hover {
+            transform: scale(1.1);
+        }
+
+        #sidebar {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(26, 26, 26, 0.8);
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        #sidebar h3 {
+            margin: 0 0 10px 0;
+            color: #00ff00;
+            text-align: center;
+        }
+
+        #sidebar ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #sidebar ul li {
+            margin-bottom: 5px;
+        }
+
+        /* Canvas pour la scène 3D */
+        #drone-3d {
+            position: fixed;
+            top: 20px; /* Décaler vers le haut */
+            left: 20px;
+            width: 200px;  /* Réduire la largeur */
+            height: 200px; /* Réduire la hauteur */
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            opacity: 0.8; /* Ajouter de la transparence */
+            background-color: rgba(26, 26, 26, 0.5); /* Fond semi-transparent */
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <!-- Video Container -->
+        <div id="video-container">
+            <img id="video-feed" src="/video" alt="Video Feed">
+        </div>
+
+        <!-- Control Buttons -->
+        <div id="controls">
+            <button class="button" onclick="sendCommand('takeoff')">Take Off</button>
+            <button class="button" onclick="sendCommand('land')">Land</button>
+            <button class="button" onclick="sendCommand('start_tracking')">Start Tracking</button>
+            <button class="button" onclick="sendCommand('stop_tracking')">Stop Tracking</button>
+            <button class="button" onclick="startRecording()">Start Recording</button>
+            <button class="button" onclick="stopRecording()">Stop Recording</button>
+        </div>
+
+        <!-- Palette de couleurs -->
+        <div id="color-palette">
+            <div class="color-box" style="background-color: blue;" onclick="setColor('blue')"></div>
+            <div class="color-box" style="background-color: red;" onclick="setColor('red')"></div>
+            <div class="color-box" style="background-color: green;" onclick="setColor('green')"></div>
+            <div class="color-box" style="background-color: yellow;" onclick="setColor('yellow')"></div>
+            <div class="color-box" style="background-color: orange;" onclick="setColor('orange')"></div>
+            <div class="color-box" style="background-color: purple;" onclick="setColor('purple')"></div>
+        </div>
+    </div>
+
+    <!-- Sidebar for status and velocities -->
+    <div id="sidebar">
+        <h3>Status</h3>
+        <ul>
+            <li>Mode: <span id="status">Manual</span></li>
+            <li>Recording: <span id="recording-status">Off</span></li>
+        </ul>
+        <h3>Velocities</h3>
+        <ul>
+            <li>Forward/Backward: <span id="for_back_vel">0</span></li>
+            <li>Left/Right: <span id="left_right_vel">0</span></li>
+            <li>Up/Down: <span id="up_down_vel">0</span></li>
+            <li>Yaw: <span id="yaw_vel">0</span></li>
+        </ul>
+    </div>
+
+    <!-- Canvas pour la scène 3D -->
+    <div id="drone-3d"></div>
+
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // Three.js Scene
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); // Activer la transparence
+        renderer.setSize(200, 200);  // Ajuster la taille du rendu
+        document.getElementById('drone-3d').appendChild(renderer.domElement);
+
+        // Drone Model (simplifié)
+        const droneBody = new THREE.BoxGeometry(1, 0.2, 1);
+        const droneMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+        const drone = new THREE.Mesh(droneBody, droneMaterial);
+        scene.add(drone);
+
+        // Axes Helper
+        const axesHelper = new THREE.AxesHelper(2);
+        scene.add(axesHelper);
+
+        // Position the camera
+        camera.position.z = 5;
+
+        // Animation function
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Function to update the drone's position and rotation in 3D
+        function updateDrone3D(velocities) {
+            // Update position
+            drone.position.x = velocities.left_right / 50;
+            drone.position.y = velocities.up_down / 50;
+            drone.position.z = -velocities.for_back / 50;
+
+            // Update rotation (yaw)
+            drone.rotation.y = velocities.yaw / 50;
+        }
+
+        // Function to send commands to the server
+        async function sendCommand(command) {
+            try {
+                const response = await fetch(`/command/${command}`);
+                const data = await response.json();
+                if (data.error) alert(data.error);
+                else console.log(data.message);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Function to start recording
+        async function startRecording() {
+            try {
+                const response = await fetch('/start_recording');
+                const data = await response.text();
+                console.log(data);
+                document.getElementById('recording-status').textContent = "On";
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Function to stop recording
+        async function stopRecording() {
+            try {
+                const response = await fetch('/stop_recording');
+                const data = await response.text();
+                console.log(data);
+                document.getElementById('recording-status').textContent = "Off";
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Function to set the tracking color
+        async function setColor(color) {
+            try {
+                const response = await fetch(`/set_color/${color}`);
+                const data = await response.json();
+                console.log(data.message);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Function to update the status dynamically
+        async function updateStatus() {
+            try {
+                const response = await fetch('/get_status');
+                const data = await response.json();
+                document.getElementById('status').textContent = data.mode;
+            } catch (error) {
+                console.error('Error fetching status:', error);
+            }
+        }
+
+        // Function to update velocities dynamically
+        async function updateVelocities() {
+            try {
+                const response = await fetch('/get_velocities');
+                const data = await response.json();
+                document.getElementById('for_back_vel').textContent = data.for_back;
+                document.getElementById('left_right_vel').textContent = data.left_right;
+                document.getElementById('up_down_vel').textContent = data.up_down;
+                document.getElementById('yaw_vel').textContent = data.yaw;
+
+                // Update the 3D drone simulation
+                updateDrone3D(data);
+            } catch (error) {
+                console.error('Error fetching velocities:', error);
+            }
+        }
+
+        // Update status and velocities every second
+        setInterval(updateStatus, 1000);
+        setInterval(updateVelocities, 1000);
+    </script>
+</body>
+</html>
