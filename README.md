@@ -4,7 +4,7 @@ A web-based drone control platform featuring real-time video processing and colo
 
 ## Overview
 
-The system provides a military-style interface for drone control with real-time video feed, color tracking capabilities, and 3D visualization of drone orientation. The interface includes basic drone controls (takeoff/land), color-based tracking options, and velocity monitoring.
+The system provides a minimalist interface for drone control with real-time video feed, color tracking capabilities, and 3D visualization of drone orientation. The interface includes basic drone controls (takeoff/land), color-based tracking options, and velocity monitoring.
 
 ## Technical Stack
 
